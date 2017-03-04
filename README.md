@@ -12,3 +12,4 @@ PeerVis uses JavaScript and vis.js.
 - Keep track of which ASNs are on the graph
 - Add mailto: for peering addresses. 
 - Allow Hierarchial or alternative layouts
+- Reflect link speed in the edge thickness
