@@ -21,6 +21,14 @@ ASN: <input type="text" id="peeringASN" value="">
 
 <div id="mynetwork"></div>
 
+
+
+<table id="table"> 
+<tr id="row">
+    <td>Remove ASN</td><td>Highlight</td>
+</tr>
+</table>
+
 <script type="text/javascript">
 var nodes, edges, network, data, container;
 var group = 0;
@@ -28,45 +36,71 @@ var group = 0;
 function updateGraph() {
 
     asn = document.getElementById("peeringASN").value
-	var req = new XMLHttpRequest();
-	req.open("GET", "https://unicast.network/api/net?depth=2&asn=" + asn, false);
-	req.send(null);
-	asnOne = JSON.parse(req.responseText);
+    var req = new XMLHttpRequest();
+    req.open("GET", "https://unicast.network/api/net?depth=2&asn=" + asn, false);
+    req.send(null);
+    asnIX = JSON.parse(req.responseText);
 
-	var ix_num = asnOne["data"][0]["netixlan_set"];
-	var node,link;
-	nodes.add([ {"id": asnOne["data"][0]["asn"], "label": asnOne["data"][0]["name"], "group": group } ]);
-	for (var i = 0; i < ix_num.length; i++){
-	    name =  ix_num[i]["name"];
-		node = {"id": name, "label": ix_num[i]["name"]};
-		node_c = {"id": name, "label": ix_num[i]["name"], color: "red"};
-		link = {"to": name, "from": asnOne["data"][0]["asn"], };
-                edges.add([link]);
-		try { 
-			nodes.add([node]);
-			}
-			catch(err){console.log("updating " + name ); nodes.update([{ id: name, color: "red" }])}
+    var ix_num = asnIX["data"][0]["netixlan_set"];
+    var node,link;
+    nodes.add([ {"id": asnIX["data"][0]["asn"], "label": asnIX["data"][0]["name"], "group": group } ]);
+    for (var i = 0; i < ix_num.length; i++){
+        name =  ix_num[i]["name"];
+        node = {"id": name, "label": ix_num[i]["name"]};
+        node_c = {"id": name, "label": ix_num[i]["name"], color: "red"};
+        link = {"to": name, "from": asnIX["data"][0]["asn"]};
+        edges.add([link]);
+        try { nodes.add([node]); } // End try 
+            // Catch logic should detect if there is 2x links from same ASN, or links to different ASN here. 
+            catch(err){
+                console.log("updating " + name ); 
+                nodes.update([{ id: name, color: "red" }]);
+            } // End catch
 
-	}
-	group++;
-	network = new vis.Network(container, data, options);
+    }
+    var btn = document.createElement("button")
+    var t = document.createTextNode("Remove " + asnIX["data"][0]["asn"])
+    btn.setAttribute("id", asn)
+    btn.setAttribute("onclick", "removeNode(this.id)")
+    btn.appendChild(t);
+    var element = document.getElementById("table");
+    element.appendChild(btn);
+
+    group++;
+    network = new vis.Network(container, data, options);
 
 }
 
 function draw() {
-	// create an array with nodes
-	nodes = new vis.DataSet();
-	// create an array with edges
-	edges = new vis.DataSet();
+    // create an array with nodes
+    nodes = new vis.DataSet();
+    // create an array with edges
+    edges = new vis.DataSet();
 
-	// create a network
-	var container = document.getElementById('network');
-	data = {
-		nodes: nodes,
-		edges: edges
-	};
-	var options = {};
-	network = new vis.Network(container, data, options);
+    // create a network
+    var container = document.getElementById('network');
+    data = {
+        nodes: nodes,
+        edges: edges
+    };
+    var options = {};
+    network = new vis.Network(container, data, options);
+
+}
+
+function removeNode(nodeId) {
+
+    // Need to loop over nodes, detect only has edges towards the node we remove, and remove those nodes also. 
+        // Foreach edge, filter node group by ID. Re-draw on these only. 
+    nodes.remove({nodeId});
+    var fromID = edges.get({
+        filter: function (item) {
+             return (item.from == nodeId);
+             }
+        });
+    edges.remove(fromID)
+    // Redraw! 
+    network = new vis.Network(container, data, options);
 
 }
 
@@ -75,27 +109,37 @@ var container = document.getElementById("mynetwork");
 
 // provide the data in the vis format
 
-var directionInput = "LR";
 var options = {
-			layout: {
-				improvedLayout: true,
-				randomSeed: 6,
-				//hierarchical: {
-				//	direction: directionInput,
-				//	sortMethod: "directed",
-				//	levelSeparation: 600,
-				//	nodeSpacing: 100
-				//}
-			},
-			physics: { 
-				stabilization: true
-			},
-			interaction: {
-				hover: true
-			}
+  nodes: {
+    shape: 'dot',
+    scaling: {
+      min: 10,
+      max: 30,
+      label: {
+        min: 8,
+        max: 30,
+        drawThreshold: 12,
+        maxVisible: 20
+      }
+    },
+    font: {
+      size: 12,
+      face: 'Tahoma'
+    }
+  },
+  edges: {
+    width: 0.15,
+    color: {inherit: 'from'},
+    smooth: {
+      type: 'continuous'
+    }
+  },
+  physics: false,
+  interaction: {
+    tooltipDelay: 200,
+    hideEdgesOnDrag: true
+  }
 };
-
-// initialize your network!
 
 </script>
 </body>
